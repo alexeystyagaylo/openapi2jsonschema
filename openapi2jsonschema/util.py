@@ -81,7 +81,10 @@ def change_dict_values(d, prefix, version):
             new_v = v
             if isinstance(v, dict):
                 if "nullable" in new_v:
-                    new_v["type"] = [new_v["type"], "null"]
+                    if isinstance(new_v["type"], list):
+                        new_v["type"].append("null")
+                    else:
+                        new_v["type"] = [new_v["type"], "null"]
                     del new_v["nullable"]
                 new_v = change_dict_values(v, prefix, version)
             elif isinstance(v, list):
