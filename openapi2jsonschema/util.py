@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from copy import deepcopy
+from openapi_schema_to_json_schema import to_json_schema
 
 
 def iteritems(d):
@@ -79,13 +81,8 @@ def change_dict_values(d, prefix, version):
     try:
         for k, v in iteritems(d):
             new_v = v
+            new_v = to_json_schema(new_v)
             if isinstance(v, dict):
-                if "nullable" in new_v:
-                    if isinstance(new_v["type"], list):
-                        new_v["type"].append("null")
-                    else:
-                        new_v["type"] = [new_v["type"], "null"]
-                    del new_v["nullable"]
                 new_v = change_dict_values(v, prefix, version)
             elif isinstance(v, list):
                 new_v = list()
@@ -114,3 +111,11 @@ def append_no_duplicates(obj, key, value):
         obj[key] = []
     if value not in obj[key]:
         obj[key].append(value)
+
+
+def handle_all_of_keyword(specification, components):
+    base_specification = specification["allOf"][0]["$ref"].split("/")[-1]
+    parent_schema = deepcopy(components[base_specification])
+    _additional_properties = specification["allOf"][1]
+    parent_schema["properties"].update(_additional_properties["properties"])
+    return parent_schema

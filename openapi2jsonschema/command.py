@@ -16,7 +16,7 @@ from openapi2jsonschema.util import (
     allow_null_optional_fields,
     change_dict_values,
     append_no_duplicates,
-)
+    handle_all_of_keyword)
 from openapi2jsonschema.errors import UnsupportedError
 
 
@@ -65,7 +65,9 @@ def default(output, schema, prefix, stand_alone, expanded, kubernetes, strict):
     info("Parsing schema")
     # Note that JSON is valid YAML, so we can use the YAML parser whether
     # the schema is stored in JSON or YAML
-    data = yaml.load(response.read(), Loader=yaml.SafeLoader)
+    with open("/Users/user/PycharmProjects/openapi2jsonschema/entities.json") as f:
+        response = f.read()
+    data = yaml.load(response, Loader=yaml.SafeLoader)
 
     if "swagger" in data:
         version = data["swagger"]
@@ -179,6 +181,8 @@ def default(output, schema, prefix, stand_alone, expanded, kubernetes, strict):
             ):
                 raise UnsupportedError("%s not currently supported" % kind)
 
+            if specification.get("allOf"):
+                specification = handle_all_of_keyword(specification, components)
             updated = change_dict_values(specification, prefix, version)
             specification = updated
 
@@ -227,6 +231,8 @@ def default(output, schema, prefix, stand_alone, expanded, kubernetes, strict):
                     if response["content"].get("application/json"):
                         specification = response["content"]["application/json"]
                 if specification:
+                    if specification.get("allOf"):
+                        specification = handle_all_of_keyword(specification, components)
                     updated = change_dict_values(specification, prefix, version)
                     response = updated
 
