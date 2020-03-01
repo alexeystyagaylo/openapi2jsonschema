@@ -113,9 +113,15 @@ def append_no_duplicates(obj, key, value):
         obj[key].append(value)
 
 
-def handle_all_of_keyword(specification, components):
-    base_specification = specification["allOf"][0]["$ref"].split("/")[-1]
-    parent_schema = deepcopy(components[base_specification])
-    _additional_properties = specification["allOf"][1]
-    parent_schema["properties"].update(_additional_properties["properties"])
-    return parent_schema
+def handle_all_of_keyword(self, specification):
+    if specification.get("allOf"):
+        base_specification = specification["allOf"][0]["$ref"].split("/")[-1]
+        base_schema = self.components[base_specification]
+        _additional_properties = specification["allOf"][1]
+        if base_schema.get("allOf"):
+            _specification = self.handle_all_of_keyword(base_schema)
+        else:
+            base_schema["properties"].update(_additional_properties["properties"])
+            _specification = base_schema
+            return _specification
+    return specification
